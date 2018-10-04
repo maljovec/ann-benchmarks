@@ -3,10 +3,16 @@ import numpy
 import os
 import random
 import sys
+
+import subprocess
+# import samplers
+# import pyDOE
+# import ghalton
+
 try:
     from urllib import urlretrieve
 except ImportError:
-    from urllib.request import urlretrieve # Python 3
+    from urllib.request import urlretrieve  # Python 3
 
 
 def download(src, dst):
@@ -40,8 +46,10 @@ def write_output(train, test, fn, distance, count=100):
     f.attrs['distance'] = distance
     print('train size: %9d * %4d' % train.shape)
     print('test size:  %9d * %4d' % test.shape)
-    f.create_dataset('train', (len(train), len(train[0])), dtype=train.dtype)[:] = train
-    f.create_dataset('test', (len(test), len(test[0])), dtype=test.dtype)[:] = test
+    f.create_dataset('train', (len(train), len(
+        train[0])), dtype=train.dtype)[:] = train
+    f.create_dataset('test', (len(test), len(
+        test[0])), dtype=test.dtype)[:] = test
     neighbors = f.create_dataset('neighbors', (len(test), count), dtype='i')
     distances = f.create_dataset('distances', (len(test), count), dtype='f')
     bf = BruteForceBLAS(distance, precision=numpy.float32)
@@ -77,7 +85,8 @@ def glove(out_fn, d):
             v = [float(x) for x in line.strip().split()[1:]]
             X.append(numpy.array(v))
         X_train, X_test = train_test_split(X)
-        write_output(numpy.array(X_train), numpy.array(X_test), out_fn, 'angular')
+        write_output(numpy.array(X_train), numpy.array(
+            X_test), out_fn, 'angular')
 
 
 def _load_texmex_vectors(f, n, k):
@@ -151,21 +160,26 @@ def _load_mnist_vectors(fn):
     b, format_string = type_code_info[type_code]
     vectors = []
     for i in range(entry_count):
-        vectors.append([struct.unpack(format_string, f.read(b))[0] for j in range(entry_size)])
+        vectors.append([struct.unpack(format_string, f.read(b))[0]
+                        for j in range(entry_size)])
     return numpy.array(vectors)
 
 
 def mnist(out_fn):
-    download('http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz', 'mnist-train.gz')
-    download('http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz', 'mnist-test.gz')
+    download(
+        'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz', 'mnist-train.gz')
+    download(
+        'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz', 'mnist-test.gz')
     train = _load_mnist_vectors('mnist-train.gz')
     test = _load_mnist_vectors('mnist-test.gz')
     write_output(train, test, out_fn, 'euclidean')
 
 
 def fashion_mnist(out_fn):
-    download('http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz', 'fashion-mnist-train.gz')
-    download('http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz', 'fashion-mnist-test.gz')
+    download('http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz',
+             'fashion-mnist-train.gz')
+    download('http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz',
+             'fashion-mnist-test.gz')
     train = _load_mnist_vectors('fashion-mnist-train.gz')
     test = _load_mnist_vectors('fashion-mnist-test.gz')
     write_output(train, test, out_fn, 'euclidean')
@@ -180,7 +194,7 @@ def transform_bag_of_words(filename, n_dimensions, out_fn):
         file_content = f.readlines()
         entries = int(file_content[0])
         words = int(file_content[1])
-        file_content = file_content[3:] # strip first three entries
+        file_content = file_content[3:]  # strip first three entries
         print("building matrix...")
         A = lil_matrix((entries, words))
         for e in file_content:
@@ -189,9 +203,11 @@ def transform_bag_of_words(filename, n_dimensions, out_fn):
         print("normalizing matrix entries with tfidf...")
         B = TfidfTransformer().fit_transform(A)
         print("reducing dimensionality...")
-        C = random_projection.GaussianRandomProjection(n_components = n_dimensions).fit_transform(B)
+        C = random_projection.GaussianRandomProjection(
+            n_components=n_dimensions).fit_transform(B)
         X_train, X_test = train_test_split(C)
-        write_output(numpy.array(X_train), numpy.array(X_test), out_fn, 'angular')
+        write_output(numpy.array(X_train), numpy.array(
+            X_test), out_fn, 'angular')
 
 
 def nytimes(out_fn, n_dimensions):
@@ -203,7 +219,8 @@ def nytimes(out_fn, n_dimensions):
 def random(out_fn, n_dims, n_samples, centers, distance):
     import sklearn.datasets
 
-    X, _ = sklearn.datasets.make_blobs(n_samples=n_samples, n_features=n_dims, centers=centers, random_state=1)
+    X, _ = sklearn.datasets.make_blobs(
+        n_samples=n_samples, n_features=n_dims, centers=centers, random_state=1)
     X_train, X_test = train_test_split(X, test_size=0.1)
     write_output(X_train, X_test, out_fn, distance)
 
@@ -211,7 +228,8 @@ def random(out_fn, n_dims, n_samples, centers, distance):
 def word2bits(out_fn, path, fn):
     import tarfile
     local_fn = fn + '.tar.gz'
-    url = 'http://web.stanford.edu/~maxlam/word_vectors/compressed/%s/%s.tar.gz' % (path, fn)
+    url = 'http://web.stanford.edu/~maxlam/word_vectors/compressed/%s/%s.tar.gz' % (
+        path, fn)
     download(url, local_fn)
     print('parsing vectors in %s...' % local_fn)
     with tarfile.open(local_fn, 'r:gz') as t:
@@ -223,6 +241,57 @@ def word2bits(out_fn, path, fn):
 
         X_train, X_test = train_test_split(X)
         write_output(X_train, X_test, out_fn, 'euclidean')  # TODO: use hamming
+
+
+# Writing my own custom samplers to know how these algorithms perform on
+# denser dimensionalities (up to 10D and 1 billion points) and
+# I need to test the time it takes to build a full graph
+
+
+def uniform(out_fn, seed, n_dims, n_samples, distance):
+    numpy.random.seed(seed)
+    X = numpy.random.uniform(size=(n_samples, n_dims))
+    write_output(X, X, out_fn, distance)
+
+
+def normal(out_fn, seed, n_dims, n_samples, distance):
+    numpy.random.seed(seed)
+    X = numpy.clip(numpy.random.normal(
+        loc=0.5, scale=0.15, size=(n_samples, n_dims)), 0, 1)
+    write_output(X, X, out_fn, distance)
+
+
+def cvt(out_fn, seed, n_dims, n_samples, distance):
+    result = subprocess.run(['samplers/cvt/createCVT', '-N', str(n_samples),
+                             '-D', str(n_dims), '-seed',
+                             str(seed), '-ann', '1',
+                             '-iterations', '1000000'],
+                            stdout=subprocess.PIPE)
+    lines = result.stdout.decode('utf-8').strip().split('\n')
+    X = numpy.zeros((n_samples, n_dims))
+    for i, line in enumerate(lines):
+        X[i, :] = list(map(float, line.strip().split(' ')))
+    write_output(X, X, out_fn, distance)
+
+
+def shell(out_fn, seed, n_dims, n_samples, distance):
+    numpy.random.seed(seed)
+    r = numpy.atleast_2d(numpy.random.uniform(low=0.5, high=1, size=n_samples)).T
+    sampler = samplers.DirectionalSampler(n_dims)
+    X = ((r * sampler.generate_samples(n_samples)) + 1) / 2.
+    write_output(X, X, out_fn, distance)
+
+
+def lhs(out_fn, seed, n_dims, n_samples, distance):
+    numpy.random.seed(seed)
+    X = pyDOE.lhs(n_dims, n_samples)
+    write_output(X, X, out_fn, distance)
+
+
+def halton(out_fn, seed, n_dims, n_samples, distance):
+    sequencer = ghalton.GeneralizedHalton(n_dims, seed)
+    X = numpy.array(sequencer.get(n_samples))
+    write_output(X, X, out_fn, distance)
 
 
 DATASETS = {
@@ -241,4 +310,10 @@ DATASETS = {
     'nytimes-256-angular': lambda out_fn: nytimes(out_fn, 256),
     'nytimes-16-angular': lambda out_fn: nytimes(out_fn, 16),
     'word2bits-800-hamming': lambda out_fn: word2bits(out_fn, '400K', 'w2b_bitlevel1_size800_vocab400K'),
+    'uniform-5-euclidean': lambda out_fn: uniform(out_fn, 0, 5, 10000000, 'euclidean'),
+    'normal-5-euclidean': lambda out_fn: normal(out_fn, 0, 5, 10000000, 'euclidean'),
+    'cvt-5-euclidean': lambda out_fn: cvt(out_fn, 0, 5, 10000000, 'euclidean'),
+    'shell-5-euclidean': lambda out_fn: shell(out_fn, 0, 5, 10000000, 'euclidean'),
+    'lhs-5-euclidean': lambda out_fn: lhs(out_fn, 0, 5, 10000000, 'euclidean'),
+    'halton-5-euclidean': lambda out_fn: halton(out_fn, 0, 5, 10000000, 'euclidean'),
 }
