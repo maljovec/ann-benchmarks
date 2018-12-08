@@ -390,6 +390,12 @@ DATASETS = {
     'shell-5-euclidean': lambda out_fn: shell(out_fn, 0, 5, 10000000, 'euclidean'),
     'lhs-5-euclidean': lambda out_fn: lhs(out_fn, 0, 5, 10000000, 'euclidean'),
     'halton-5-euclidean': lambda out_fn: halton(out_fn, 0, 5, 10000000, 'euclidean'),
+    'uniform-3-euclidean': lambda out_fn: uniform(out_fn, 0, 3, 1000000, 'euclidean'),
+    'normal-3-euclidean': lambda out_fn: normal(out_fn, 0, 3, 1000000, 'euclidean'),
+    'cvt-3-euclidean': lambda out_fn: cvt(out_fn, 0, 3, 1000000, 'euclidean'),
+    'shell-3-euclidean': lambda out_fn: shell(out_fn, 0, 3, 1000000, 'euclidean'),
+    'lhs-3-euclidean': lambda out_fn: lhs(out_fn, 0, 3, 1000000, 'euclidean'),
+    'halton-3-euclidean': lambda out_fn: halton(out_fn, 0, 3, 1000000, 'euclidean'),
     'lastfm-64-dot': lambda out_fn: lastfm(out_fn, 64),
     'sift-256-hamming': lambda out_fn: sift_hamming(out_fn, 'sift.hamming.256'),
 }
